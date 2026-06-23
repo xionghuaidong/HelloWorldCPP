@@ -89,7 +89,7 @@ jobs:
                 "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
                 "Microsoft.VisualStudio.Component.WinXP"
             )
-            $arguments = @("modify", "--installPath", "$env:VS_INSTALLATION_PATH")
+            $arguments = @("modify", "--installPath", "`"$env:VS_INSTALLATION_PATH`"")
             foreach ($component in $components) {
                 $arguments += @("--add", $component)
             }
