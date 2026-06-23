@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  compile-and-upload:
+  compile:
     runs-on: ubuntu-latest
 
     steps:
