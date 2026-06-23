@@ -21,73 +21,96 @@ jobs:
 
       - name: Resolve Visual Studio paths
         run: |
-          $vswhereCommand = Get-Command vswhere -ErrorAction SilentlyContinue
-          if ($vswhereCommand) {
-              $vswherePath = $vswhereCommand.Source
-          } else {
-              $candidate = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
-              if (-not (Test-Path $candidate)) {
-                  throw "vswhere.exe was not found"
-              }
-              $vswherePath = $candidate
-          }
+            $vsInstallerDirs = @(
+                (Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer")
+                (Join-Path ${env:ProgramFiles} "Microsoft Visual Studio\Installer")
+            )
+            $vswherePath = $null
+            foreach ($dir in $vsInstallerDirs) {
+                $candidate = Join-Path $dir "vswhere.exe"
+                if (Test-Path $candidate) {
+                    $vswherePath = $candidate
+                    break
+                }
+            }
+            if (-not $vswherePath) {
+                $vswhereCommand = Get-Command vswhere -ErrorAction SilentlyContinue
+                if ($vswhereCommand) {
+                    $vswherePath = $vswhereCommand.Source
+                }
+            }
+            if (-not $vswherePath) {
+                throw "vswhere.exe was not found"
+            }
 
-          $vsInstallPath = & $vswherePath -latest -products *                   `
-                                          -requires Microsoft.Component.MSBuild `
-                                          -property installationPath
-          if (-not $vsInstallPath) {
-              throw "Visual Studio installation was not found by vswhere"
-          }
-          $vsInstallerDir = Split-Path -Parent $vswherePath
-          $vsInstallerPath = Join-Path $vsInstallerDir "vs_installer.exe"
-          if (-not (Test-Path $vsInstallerPath)) {
-              throw "vs_installer.exe was not found at: $vsInstallerPath"
-          }
-          $msbuildPath = Join-Path $vsInstallPath "MSBuild\Current\Bin\amd64\MSBuild.exe"
-          if (-not (Test-Path $msbuildPath)) {
-              throw "MSBuild.exe was not found at: $msbuildPath"
-          }
+            $vsInstallerPath = $null
+            foreach ($dir in $vsInstallerDirs) {
+                $candidate = Join-Path $dir "vs_installer.exe"
+                if (Test-Path $candidate) {
+                    $vsInstallerPath = $candidate
+                    break
+                }
+            }
+            if (-not $vsInstallerPath) {
+                $dir = Split-Path -Parent $vswherePath
+                $candidate = Join-Path $dir "vs_installer.exe"
+                if (Test-Path $candidate) {
+                    $vsInstallerPath = $candidate
+                }
+            }
+            if (-not $vsInstallerPath) {
+                throw "vs_installer.exe was not found"
+            }
 
-          "VSWHERE_PATH=$vswherePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "VS_INSTALL_PATH=$vsInstallPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "VS_INSTALLER_DIR=$vsInstallerDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "VS_INSTALLER_PATH=$vsInstallerPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "MSBUILD_PATH=$msbuildPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            $vsInstallationPath = & $vswherePath -latest -products *                   `
+                                                 -requires Microsoft.Component.MSBuild `
+                                                 -property installationPath
+            if (-not $vsInstallationPath) {
+                throw "Visual Studio installation was not found by vswhere"
+            }
+            $msbuildPath = Join-Path $vsInstallationPath "MSBuild\Current\Bin\amd64\MSBuild.exe"
+            if (-not (Test-Path $msbuildPath)) {
+                throw "MSBuild.exe was not found at: $msbuildPath"
+            }
 
-          Write-Host "vswhere path: $vswherePath"
-          Write-Host "Visual Studio install path: $vsInstallPath"
-          Write-Host "Visual Studio installer dir: $vsInstallerDir"
-          Write-Host "Visual Studio installer path: $vsInstallerPath"
-          Write-Host "MSBuild path: $msbuildPath"
+            "VSWHERE_PATH=$vswherePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "VS_INSTALLER_PATH=$vsInstallerPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "VS_INSTALLATION_PATH=$vsInstallationPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "MSBUILD_PATH=$msbuildPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+            Write-Host "vswhere path: $vswherePath"
+            Write-Host "Visual Studio installer path: $vsInstallerPath"
+            Write-Host "Visual Studio installation path: $vsInstallationPath"
+            Write-Host "MSBuild path: $msbuildPath"
 
       - name: Install Visual Studio components
         run: |
-          $componentsToAdd = @(
-              "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
-              "Microsoft.VisualStudio.Component.WinXP"
-          )
-          $arguments = @("modify", "--installPath", $env:VS_INSTALL_PATH)
-          for $component in $componentsToAdd (
-              $arguments += @("--add", $component)
-          )
-          $arguments += @("--quiet", "--norestart", "--nocache")
-          $process = Start-Process -FilePath $env:VS_INSTALLER_PATH -ArgumentList $arguments `
-                                   -Wait -PassThru -NoNewWindow
-          if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
-              Write-Host "Visual Studio components have been successfully added."
-          } else {
-              Write-Host "Visual Studio components were not installed. Exit code: $($process.ExitCode)"
-              exit 1
-          }
+            $componentsToAdd = @(
+                "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
+                "Microsoft.VisualStudio.Component.WinXP"
+            )
+            $arguments = @("modify", "--installPath", $env:VS_INSTALLATION_PATH)
+            for $component in $componentsToAdd (
+                $arguments += @("--add", $component)
+            )
+            $arguments += @("--quiet", "--norestart", "--nocache")
+            $process = Start-Process -FilePath $env:VS_INSTALLER_PATH -ArgumentList $arguments `
+                                     -Wait -PassThru -NoNewWindow
+            if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
+                Write-Host "Visual Studio components have been successfully added."
+            } else {
+                Write-Host "Visual Studio components were not installed. Exit code: $($process.ExitCode)"
+                exit 1
+            }
 
       - name: Compile C++ program
         run: |
-          & $env:MSBUILD_PATH EmptyConsoleProject\EmptyConsoleProject.sln       `
-            /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141_xp
+            & $env:MSBUILD_PATH EmptyConsoleProject\EmptyConsoleProject.sln       `
+              /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141_xp
 
       - name: Run C++ program
         run: |
-          .\EmptyConsoleProject\Release\EmptyConsoleProject.exe
+            .\EmptyConsoleProject\Release\EmptyConsoleProject.exe
 
       #- name: Compile C++ program
       #  run: |
