@@ -22,7 +22,7 @@ jobs:
       - name: Resolve Visual Studio paths
         run: |
           $vswhereCommand = Get-Command vswhere -ErrorAction SilentlyContinue
-          if $(vswhereCommand) {
+          if ($vswhereCommand) {
               $vswherePath = $vswhereCommand.Source
           } else {
               $candidate = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
