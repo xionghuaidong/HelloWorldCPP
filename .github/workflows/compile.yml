@@ -55,7 +55,7 @@ jobs:
 
       - name: MSBuild for XP
         run: |
-          & "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe" EmptyConsoleProject\EmptyConsoleProject.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141_xp
+          & "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe" EmptyConsoleProject\EmptyConsoleProject.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141_xp /p:VCToolsVersion=14.16.27023
 
       - name: Run C++ Program
         run: |
