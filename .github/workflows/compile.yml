@@ -19,19 +19,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check admin rights
-        shell: pwsh
-        run: |
-          whoami
-          whoami /groups | findstr /i "Administrators"
+      #- name: Check admin rights
+      #  shell: pwsh
+      #  run: |
+      #    whoami
+      #    whoami /groups | findstr /i "Administrators"
 
-      - name: Check Visual Studio info
-        run: |
-          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all -products * -format json
+      #- name: Check Visual Studio info
+      #  run: |
+      #    & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all -products * -format json
 
-      - name: Check installed vs components
-        run: |
-           & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all -products * -property instanceId | %{cat -Path C:\ProgramData\Microsoft\VisualStudio\Packages\_Instances\$_\state.json}
+      #- name: Check installed vs components
+      #  run: |
+      #     & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all -products * -property instanceId | %{cat -Path C:\ProgramData\Microsoft\VisualStudio\Packages\_Instances\$_\state.json}
 
       - name: Install Visual Studio components
         run: |
@@ -53,9 +53,17 @@ jobs:
                 exit 1
             }
 
-      - name: Compile C++ program
+      - name: MSBuild for XP
         run: |
-          g++ src/main.cpp -o hello
+          & "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe" EmptyConsoleProject\EmptyConsoleProject.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141_xp
+
+      - name: Run C++ Program
+        run: |
+          .\EmptyConsoleProject\Release\EmptyConsoleProject.exe
+
+      #- name: Compile C++ program
+      #  run: |
+      #    g++ src/main.cpp -o hello
 
       #- name: Set package metadata
       #  shell: bash
