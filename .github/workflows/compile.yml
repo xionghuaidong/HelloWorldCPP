@@ -1,0 +1,29 @@
+name: Compile C++ program
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  compile-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compile C++ program
+        run: |
+          g++ src/main.cpp -o hello
+
+      - name: Package binary
+        run: |
+          tar -czf hello.tar.gz hello
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hello-binary
+          path: hello.tar.gz
