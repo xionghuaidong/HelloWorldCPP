@@ -35,7 +35,7 @@ jobs:
 
       - name: Install Visual Studio components
         run: |
-            #Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+            Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
             $InstallPath = "C:\Program Files\Microsoft Visual Studio\18\Enterprise"
             $componentsToAdd = @(
                   "Microsoft.VisualStudio.Component.WinXP"
