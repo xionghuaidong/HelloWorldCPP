@@ -89,11 +89,12 @@ jobs:
                 "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
                 "Microsoft.VisualStudio.Component.WinXP"
             )
-            $arguments = @("modify", "--installPath", $env:VS_INSTALLATION_PATH)
+            $arguments = @("modify", "--installPath", "$env:VS_INSTALLATION_PATH")
             foreach ($component in $components) {
                 $arguments += @("--add", $component)
             }
             $arguments += @("--quiet", "--norestart", "--nocache")
+            Write-Host "arguments: $arguments"
             $process = Start-Process -FilePath $env:VS_INSTALLER_PATH -ArgumentList $arguments `
                                      -Wait -PassThru -NoNewWindow
             if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
