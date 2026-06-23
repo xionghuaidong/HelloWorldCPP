@@ -38,6 +38,7 @@ jobs:
             Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
             $InstallPath = "C:\Program Files\Microsoft Visual Studio\18\Enterprise"
             $componentsToAdd = @(
+                  "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
                   "Microsoft.VisualStudio.Component.WinXP"
             )
             [string]$workloadArgs = $componentsToAdd | ForEach-Object {" --add " +  $_}
@@ -55,7 +56,7 @@ jobs:
 
       - name: MSBuild for XP
         run: |
-          & "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe" EmptyConsoleProject\EmptyConsoleProject.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141_xp /p:VCToolsVersion=14.16.27023
+          & "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\amd64\MSBuild.exe" EmptyConsoleProject\EmptyConsoleProject.sln /p:Configuration=Release /p:Platform=x86 /p:PlatformToolset=v141_xp
 
       - name: Run C++ Program
         run: |
