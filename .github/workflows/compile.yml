@@ -109,7 +109,7 @@ jobs:
       - name: Compile C++ program
         shell: pwsh
         run: |
-            & $env:MSBUILD_PATH EmptyConsoleProject\EmptyConsoleProject.sln         `
+            & $env:MSBUILD_PATH EmptyConsoleProject\EmptyConsoleProject.sln `
                 /p:Configuration=Release /p:Platform=x86
 
       - name: Set package metadata
