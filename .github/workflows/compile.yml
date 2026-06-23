@@ -90,9 +90,9 @@ jobs:
                 "Microsoft.VisualStudio.Component.WinXP"
             )
             $arguments = @("modify", "--installPath", $env:VS_INSTALLATION_PATH)
-            foreach ($component in $components) (
+            foreach ($component in $components) {
                 $arguments += @("--add", $component)
-            )
+            }
             $arguments += @("--quiet", "--norestart", "--nocache")
             $process = Start-Process -FilePath $env:VS_INSTALLER_PATH -ArgumentList $arguments `
                                      -Wait -PassThru -NoNewWindow
