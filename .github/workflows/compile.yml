@@ -19,6 +19,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check admin rights
+        shell: pwsh
+        run: |
+          whoami
+          whoami /groups | findstr /i "Administrators"
+
+      - name: Check Visual Studio info
+        run: |
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all -products * -format json
+
+      - name: Check installed vs components
+        run: |
+           & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all -products * -property instanceId | %{cat -Path C:\ProgramData\Microsoft\VisualStudio\Packages\_Instances\$_\state.json}
+
+      - name: Install Visual Studio components
+        run: |
+            Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+            $InstallPath = "C:\Program Files\Microsoft Visual Studio\2026\Enterprise"
+            $componentsToAdd = @(
+                  "Microsoft.VisualStudio.Component.WinXP"
+            )
+            [string]$workloadArgs = $componentsToAdd | ForEach-Object {" --add " +  $_}
+            $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
+            $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+            if ($process.ExitCode -eq 0)
+            {
+                Write-Host "components have been successfully added"
+            }
+            else
+            {
+                Write-Host "components were not installed"
+                exit 1
+            }
+
       - name: Compile C++ program
         run: |
           g++ src/main.cpp -o hello
