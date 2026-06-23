@@ -85,12 +85,12 @@ jobs:
 
       - name: Install Visual Studio components
         run: |
-            $componentsToAdd = @(
+            $components= @(
                 "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
                 "Microsoft.VisualStudio.Component.WinXP"
             )
             $arguments = @("modify", "--installPath", $env:VS_INSTALLATION_PATH)
-            for $component in $componentsToAdd (
+            foreach ($component in $components) (
                 $arguments += @("--add", $component)
             )
             $arguments += @("--quiet", "--norestart", "--nocache")
