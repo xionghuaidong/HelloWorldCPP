@@ -61,11 +61,7 @@ jobs:
       - name: Compile C++ program
         shell: cmd
         run: |
-            echo "%MSVC6_VARS_PATH%"
-            dir "%ProgramFiles(x86)%"
-            dir "%ProgramFiles(x86)%\MSVC6"
-            dir "%MSVC6_VARS_PATH%"
-            call "%MSVC6_VARS_PATH%" && cl /nologo /EHsc /MD /O1 src\hello.cpp
+            call "%MSVC6_VARS_PATH%" && cl /nologo /EHsc /MD /O1 /Fehello.exe src\main.cpp
 
       - name: Set package metadata
         shell: pwsh
