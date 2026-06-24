@@ -42,7 +42,7 @@ jobs:
             Invoke-WebRequest -Uri $packageUrl -OutFile $packagePath
             Push-Location ${env:ProgramFiles(x86)}
             try {
-                & $sevenZipPath a x $packagePath
+                & $sevenZipPath x $packagePath
                 if ($LASTEXITCODE -ne 0) {
                     throw "7z failed with exit code: $LASTEXITCODE"
                 }
