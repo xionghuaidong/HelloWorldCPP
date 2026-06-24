@@ -19,98 +19,49 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Resolve Visual Studio paths
+      - name: Install MSVC6
         shell: pwsh
         run: |
-            $vsInstallerDirs = @(
-                (Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer")
-                (Join-Path ${env:ProgramFiles} "Microsoft Visual Studio\Installer")
-            )
-            $vswherePath = $null
-            foreach ($dir in $vsInstallerDirs) {
-                $candidate = Join-Path $dir "vswhere.exe"
-                if (Test-Path $candidate) {
-                    $vswherePath = $candidate
-                    break
+            $sevenZipPath = $null
+            $candidate = Join-Path $env:ProgramFiles "7-Zip\7z.exe"
+            if (Test-Path $candidate) {
+                $sevenZipPath = $candidate
+            }
+            if (-not $sevenZipPath) {
+                $sevenZip = Get-Command 7z.exe -ErrorAction SilentlyContinue
+                if ($sevenZip) {
+                    $sevenZipPath = $sevenZip.Source
                 }
             }
-            if (-not $vswherePath) {
-                $vswhereCommand = Get-Command vswhere.exe -ErrorAction SilentlyContinue
-                if ($vswhereCommand) {
-                    $vswherePath = $vswhereCommand.Source
+            if (-not $sevenZipPath) {
+                throw "7z.exe was not found"
+            }
+            $packageUrlPrefix = "https://raw.githubusercontent.com/xionghuaidong/tools/refs/heads/main"
+            $packageUrl = "$packageUrlPrefix/vs/windows/vc6/MSVC6.7z"
+            Invoke-WebRequest -Uri $packageUrl -Out-File MSVC6.7z
+            Push-Location ${env:ProgramFiles(x86)}
+            try {
+                & $sevenZipPath a x MSVC6.7z
+                if ($LASTEXITCODE -ne 0) {
+                    throw "7z failed with exit code: $LASTEXITCODE"
                 }
             }
-            if (-not $vswherePath) {
-                throw "vswhere.exe was not found"
+            finally {
+                Pop-Location
+                Remove-Item MSVC6.7z
             }
-
-            $vsInstallerPath = $null
-            foreach ($dir in $vsInstallerDirs) {
-                $candidate = Join-Path $dir "vs_installer.exe"
-                if (Test-Path $candidate) {
-                    $vsInstallerPath = $candidate
-                    break
-                }
-            }
-            if (-not $vsInstallerPath) {
-                $dir = Split-Path -Parent $vswherePath
-                $candidate = Join-Path $dir "vs_installer.exe"
-                if (Test-Path $candidate) {
-                    $vsInstallerPath = $candidate
-                }
-            }
-            if (-not $vsInstallerPath) {
-                throw "vs_installer.exe was not found"
-            }
-
-            $vsInstallationPath = & $vswherePath -latest -products *                   `
-                                                 -requires Microsoft.Component.MSBuild `
-                                                 -property installationPath
-            if (-not $vsInstallationPath) {
-                throw "Visual Studio installation was not found by vswhere"
-            }
-            $msbuildPath = Join-Path $vsInstallationPath "MSBuild\Current\Bin\amd64\MSBuild.exe"
-            if (-not (Test-Path $msbuildPath)) {
-                throw "MSBuild.exe was not found at: $msbuildPath"
-            }
-
-            "VSWHERE_PATH=$vswherePath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "VS_INSTALLER_PATH=$vsInstallerPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "VS_INSTALLATION_PATH=$vsInstallationPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "MSBUILD_PATH=$msbuildPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-
-            Write-Host "vswhere path: $vswherePath"
-            Write-Host "Visual Studio installer path: $vsInstallerPath"
-            Write-Host "Visual Studio installation path: $vsInstallationPath"
-            Write-Host "MSBuild path: $msbuildPath"
-
-      - name: Install Visual Studio components
-        shell: pwsh
-        run: |
-            $components= @(
-                "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
-                "Microsoft.VisualStudio.Component.WinXP"
-            )
-            $arguments = @("modify", "--installPath", "`"$env:VS_INSTALLATION_PATH`"")
-            foreach ($component in $components) {
-                $arguments += @("--add", $component)
-            }
-            $arguments += @("--quiet", "--norestart", "--nocache")
-            $process = Start-Process -FilePath $env:VS_INSTALLER_PATH -ArgumentList $arguments `
-                                     -Wait -PassThru -WindowStyle Hidden
-            if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
-                Write-Host "Visual Studio components have been successfully added."
-            }
-            else {
-                Write-Host "Visual Studio components were not installed. Exit code: $($process.ExitCode)"
-                exit 1
-            }
+            $msvc6DirPath = Join-Path ${env:ProgramFiles(x86)} MSVC6
+            $msvc6VarsPath = Join-Path $msvc6DirPath "VC98\Bin\VCVARS32.BAT"
+            $msvc6Path = Join-Path $msvc6DirPath "VC98\Bin\CL.EXE"
+            "MSVC6_DIR_PATH=$msvc6DirPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "MSVC6_VARS_PATH=$msvc6VarsPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "MSVC6_PATH=$msvc6Path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Compile C++ program
-        shell: pwsh
+        shell: cmd
         run: |
-            & $env:MSBUILD_PATH EmptyConsoleProject\EmptyConsoleProject.sln `
-                /p:Configuration=Release /p:Platform=x86
+            @call %MSVC6_VARS_PATH%
+            cl /nologo /EHsc /MD /O1 src\hello.cpp
 
       - name: Set package metadata
         shell: pwsh
@@ -123,7 +74,6 @@ jobs:
             }
             $packageName = "hello-$packageVersion-windows-x86"
             "PACKAGE_NAME=$packageName" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "PACKAGE_VERSION=$packageVersion" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Package binary
         shell: pwsh
@@ -143,15 +93,9 @@ jobs:
                 throw "7z.exe was not found"
             }
             $packagePath = Join-Path $env:GITHUB_WORKSPACE "$env:PACKAGE_NAME.7z"
-            Push-Location EmptyConsoleProject\Release
-            try {
-                & $sevenZipPath a -mx=9 $packagePath EmptyConsoleProject.exe
-                if ($LASTEXITCODE -ne 0) {
-                    throw "7z failed with exit code: $LASTEXITCODE"
-                }
-            }
-            finally {
-                Pop-Location
+            & $sevenZipPath a -mx=9 $packagePath hello.exe
+            if ($LASTEXITCODE -ne 0) {
+                throw "7z failed with exit code: $LASTEXITCODE"
             }
 
       - name: Upload artifact
