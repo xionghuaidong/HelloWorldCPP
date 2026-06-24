@@ -38,7 +38,7 @@ jobs:
             }
             $packageUrlPrefix = "https://raw.githubusercontent.com/xionghuaidong/tools/refs/heads/main"
             $packageUrl = "$packageUrlPrefix/vs/windows/vc6/MSVC6.7z"
-            Invoke-WebRequest -Uri $packageUrl -Out-File MSVC6.7z
+            Invoke-WebRequest -Uri $packageUrl -OutFile MSVC6.7z
             Push-Location ${env:ProgramFiles(x86)}
             try {
                 & $sevenZipPath a x MSVC6.7z
