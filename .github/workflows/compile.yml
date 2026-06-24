@@ -38,17 +38,18 @@ jobs:
             }
             $packageUrlPrefix = "https://raw.githubusercontent.com/xionghuaidong/tools/refs/heads/main"
             $packageUrl = "$packageUrlPrefix/vs/windows/vc6/MSVC6.7z"
-            Invoke-WebRequest -Uri $packageUrl -OutFile MSVC6.7z
+            $packagePath = Join-Path $env:GITHUB_WORKSPACE MSVC6.7z
+            Invoke-WebRequest -Uri $packageUrl -OutFile $packagePath
             Push-Location ${env:ProgramFiles(x86)}
             try {
-                & $sevenZipPath a x MSVC6.7z
+                & $sevenZipPath a x $packagePath
                 if ($LASTEXITCODE -ne 0) {
                     throw "7z failed with exit code: $LASTEXITCODE"
                 }
             }
             finally {
                 Pop-Location
-                Remove-Item MSVC6.7z
+                Remove-Item $packagePath
             }
             $msvc6DirPath = Join-Path ${env:ProgramFiles(x86)} MSVC6
             $msvc6VarsPath = Join-Path $msvc6DirPath "VC98\Bin\VCVARS32.BAT"
