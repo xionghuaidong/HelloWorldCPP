@@ -62,6 +62,8 @@ jobs:
         shell: cmd
         run: |
             echo "%MSVC6_VARS_PATH%"
+            dir "%ProgramFiles(x86)%"
+            dir "%ProgramFiles(x86)%\MSVC6"
             dir "%MSVC6_VARS_PATH%"
             call "%MSVC6_VARS_PATH%" && cl /nologo /EHsc /MD /O1 src\hello.cpp
 
