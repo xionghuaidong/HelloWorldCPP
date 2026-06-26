@@ -2,7 +2,7 @@ name: Cleanup old pre-releases
 
 on:
   schedule:
-    - cron: "3-59/5 * * * *"
+    - cron: "49-59/5 15 * * *"
   workflow_dispatch:
 
 permissions:
@@ -17,12 +17,10 @@ jobs:
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RETENTION_DAYS: 30
         shell: bash
         run: |
             set -euo pipefail
-            cutoff="$(date -u -d "${RETENTION_DAYS} days ago" +%s)"
-            cutoff="$(date -u -d "1 minutes ago" +%s)"
+            cutoff="$(date -u -d "$(date +%Y-%m-01) -3 months -8 hours -1 minute" +%s)"
             gh release list                                                                  \
                 --repo "${GH_REPO}"                                                          \
                 --limit 100                                                                  \
