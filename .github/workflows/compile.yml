@@ -55,8 +55,13 @@ jobs:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
+            case ${GITHUB_REF} in
+                *-rc*|*-alpha*|*-beta*) RELEASE_FLAGS=(--prerelease) ;;
+                *) RELEASE_FLAGS=() ;;
+            esac
             gh release create                        \
                 "${GITHUB_REF_NAME}"                 \
                 "${PACKAGE_NAME}.tar.gz"             \
                 --title "${GITHUB_REF_NAME}"         \
-                --notes "Release ${GITHUB_REF_NAME}"
+                --notes "Release ${GITHUB_REF_NAME}" \
+                "${RELEASE_FLAGS[@]}"
