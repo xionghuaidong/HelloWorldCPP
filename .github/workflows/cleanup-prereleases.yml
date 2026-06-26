@@ -2,7 +2,7 @@ name: Cleanup old pre-releases
 
 on:
   schedule:
-    - cron: "4/5 * * * *"
+    - cron: "1/5 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -15,6 +15,7 @@ jobs:
     steps:
       - name: Delete old RC pre-releases
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RETENTION_DAYS: 30
         shell: bash
@@ -23,6 +24,7 @@ jobs:
             cutoff="$(date -u -d "${RETENTION_DAYS} days ago" +%s)"
             cutoff="$(date -u -d "10 minutes ago" +%s)"
             gh release list                                                                  \
+                --repo "${GH_REPO}"                                                          \
                 --limit 100                                                                  \
                 --json tagName,isPrerelease,createdAt                                        \
                 --jq '.[] | select(.isPrerelease == true) | [.tagName, .createdAt] | @tsv' |
@@ -34,7 +36,7 @@ jobs:
                         if (( created_ts < cutoff ))
                         then
                             echo "Deleting old RC pre-release: ${tag}"
-                            gh release delete "${tag}" --yes --cleanup-tag
+                            gh release delete "${tag}" --repo "${GH_REPO}" --yes --cleanup-tag
                         else
                             echo "Keep recent RC pre-release: ${tag}"
                         fi
