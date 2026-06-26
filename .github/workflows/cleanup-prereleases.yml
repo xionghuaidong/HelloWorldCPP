@@ -2,7 +2,7 @@ name: Cleanup old pre-releases
 
 on:
   schedule:
-    - cron: "49-59/5 15 * * *"
+    - cron: "2 16 * * *"
   workflow_dispatch:
 
 permissions:
