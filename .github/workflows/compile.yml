@@ -19,44 +19,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Install MSVC6
-        shell: pwsh
-        run: |
-            $sevenZipPath = $null
-            $candidate = Join-Path $env:ProgramFiles "7-Zip\7z.exe"
-            if (Test-Path $candidate) {
-                $sevenZipPath = $candidate
-            }
-            if (-not $sevenZipPath) {
-                $sevenZip = Get-Command 7z.exe -ErrorAction SilentlyContinue
-                if ($sevenZip) {
-                    $sevenZipPath = $sevenZip.Source
-                }
-            }
-            if (-not $sevenZipPath) {
-                throw "7z.exe was not found"
-            }
-            $packageUrlPrefix = "https://raw.githubusercontent.com/xionghuaidong/tools/refs/heads/main"
-            $packageUrl = "$packageUrlPrefix/vs/windows/vc6/MSVC6.7z"
-            $packagePath = Join-Path $env:GITHUB_WORKSPACE MSVC6.7z
-            Invoke-WebRequest -Uri $packageUrl -OutFile $packagePath
-            Push-Location ${env:ProgramFiles(x86)}
-            try {
-                & $sevenZipPath x $packagePath
-                if ($LASTEXITCODE -ne 0) {
-                    throw "7z failed with exit code: $LASTEXITCODE"
-                }
-            }
-            finally {
-                Pop-Location
-                Remove-Item $packagePath
-            }
-            $msvc6DirPath = Join-Path ${env:ProgramFiles(x86)} MSVC6
-            $msvc6VarsPath = Join-Path $msvc6DirPath "VC98\Bin\VCVARS32.BAT"
-            $msvc6Path = Join-Path $msvc6DirPath "VC98\Bin\CL.EXE"
-            "MSVC6_DIR_PATH=$msvc6DirPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "MSVC6_VARS_PATH=$msvc6VarsPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "MSVC6_PATH=$msvc6Path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - uses: xionghuaidong/setup-msvc6@main
+
+      #- name: Install MSVC6
+      #  shell: pwsh
+      #  run: |
+      #      $sevenZipPath = $null
+      #      $candidate = Join-Path $env:ProgramFiles "7-Zip\7z.exe"
+      #      if (Test-Path $candidate) {
+      #          $sevenZipPath = $candidate
+      #      }
+      #      if (-not $sevenZipPath) {
+      #          $sevenZip = Get-Command 7z.exe -ErrorAction SilentlyContinue
+      #          if ($sevenZip) {
+      #              $sevenZipPath = $sevenZip.Source
+      #          }
+      #      }
+      #      if (-not $sevenZipPath) {
+      #          throw "7z.exe was not found"
+      #      }
+      #      $packageUrlPrefix = "https://raw.githubusercontent.com/xionghuaidong/tools/refs/heads/main"
+      #      $packageUrl = "$packageUrlPrefix/vs/windows/vc6/MSVC6.7z"
+      #      $packagePath = Join-Path $env:GITHUB_WORKSPACE MSVC6.7z
+      #      Invoke-WebRequest -Uri $packageUrl -OutFile $packagePath
+      #      Push-Location ${env:ProgramFiles(x86)}
+      #      try {
+      #          & $sevenZipPath x $packagePath
+      #          if ($LASTEXITCODE -ne 0) {
+      #              throw "7z failed with exit code: $LASTEXITCODE"
+      #          }
+      #      }
+      #      finally {
+      #          Pop-Location
+      #          Remove-Item $packagePath
+      #      }
+      #      $msvc6DirPath = Join-Path ${env:ProgramFiles(x86)} MSVC6
+      #      $msvc6VarsPath = Join-Path $msvc6DirPath "VC98\Bin\VCVARS32.BAT"
+      #      $msvc6Path = Join-Path $msvc6DirPath "VC98\Bin\CL.EXE"
+      #      "MSVC6_DIR_PATH=$msvc6DirPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      #      "MSVC6_VARS_PATH=$msvc6VarsPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      #      "MSVC6_PATH=$msvc6Path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Compile C++ program
         shell: cmd
