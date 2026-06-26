@@ -1,0 +1,46 @@
+name: Cleanup old pre-releases
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete old RC pre-releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RETENTION_DAYS: 30
+        shell: bash
+        run: |
+            set -euo pipefail
+            cutoff="$(date -u -d "${RETENTION_DAYS} days ago" +%s)"
+            cutoff="$(date -u -d "10 minutes ago" +%s)"
+            gh release list                                                                  \
+                --limit 100                                                                  \
+                --json tagName,isPrerelease,createdAt                                        \
+                --jq '.[] | select(.isPrerelease == true) | [.tagName, .createdAt] | @tsv' |
+            while IFS=$'\t' read -r tag created_at
+            do
+                case ${tag} in
+                    *-rc*|*-alpha*|*-beta*)
+                        created_ts="$(date -u -d "${created_at}" +%s)"
+                        if (( created_ts < cutoff ))
+                        then
+                            echo "Deleting old RC pre-release: ${tag}"
+                            gh release delete "${tag}" --yes --cleanup-tag
+                        else
+                            echo "Keep recent RC pre-release: ${tag}"
+                        fi
+                        ;;
+                    *)
+                        echo "Skip non-RC prerelease: ${tag}"
+                        ;;
+                esac
+            done
